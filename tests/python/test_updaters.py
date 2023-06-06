@@ -64,8 +64,8 @@ class TestUpdaters(unittest.TestCase):
 
         # hist must be same as exact on all-categorial data
         dpath = 'demo/data/'
-        ag_dtrain = xgb.DMatrix(dpath + 'agaricus.txt.train')
-        ag_dtest = xgb.DMatrix(dpath + 'agaricus.txt.test')
+        ag_dtrain = xgb.DMatrix(f'{dpath}agaricus.txt.train')
+        ag_dtest = xgb.DMatrix(f'{dpath}agaricus.txt.test')
         ag_param = {'max_depth': 2,
                     'tree_method': 'hist',
                     'eta': 1,

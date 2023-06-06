@@ -80,7 +80,7 @@ def get_weights_regression(min_weight, max_weight):
     X, y = datasets.make_regression(n, random_state=rng)
     X = np.array([[np.nan if rng.uniform(0, 1) < sparsity else x
                    for x in x_row] for x_row in X])
-    w = np.array([rng.uniform(min_weight, max_weight) for i in range(n)])
+    w = np.array([rng.uniform(min_weight, max_weight) for _ in range(n)])
     return X, y, w
 
 
@@ -108,8 +108,8 @@ def train_dataset(dataset, param_in, num_rounds=10, scale_features=False, DMatri
     else:
         dtrain = DMatrixT(X, dataset.y, weight=dataset.w, **dmatrix_params)
 
-    print("Training on dataset: " + dataset.name, file=sys.stderr)
-    print("Using parameters: " + str(param), file=sys.stderr)
+    print(f"Training on dataset: {dataset.name}", file=sys.stderr)
+    print(f"Using parameters: {str(param)}", file=sys.stderr)
     res = {}
     bst = xgb.train(param, dtrain, num_rounds, [(dtrain, 'train')],
                     evals_result=res, verbose_eval=False)
@@ -136,9 +136,7 @@ def parameter_combinations(variable_param):
     names = sorted(variable_param)
     combinations = it.product(*(variable_param[Name] for Name in names))
     for set in combinations:
-        param = {}
-        for i, name in enumerate(names):
-            param[name] = set[i]
+        param = {name: set[i] for i, name in enumerate(names)}
         result.append(param)
     return result
 
@@ -162,14 +160,18 @@ def run_suite(param, num_rounds=10, select_datasets=None, scale_features=False,
                 use_external_memory=True)
     ]
 
-    results = [
+    return [
+        train_dataset(
+            d,
+            param,
+            num_rounds=num_rounds,
+            scale_features=scale_features,
+            DMatrixT=DMatrixT,
+            dmatrix_params=dmatrix_params,
+        )
+        for d in datasets
+        if select_datasets is None or d.name in select_datasets
     ]
-    for d in datasets:
-        if select_datasets is None or d.name in select_datasets:
-            results.append(
-                train_dataset(d, param, num_rounds=num_rounds, scale_features=scale_features,
-                              DMatrixT=DMatrixT, dmatrix_params=dmatrix_params))
-    return results
 
 
 def non_increasing(L, tolerance):

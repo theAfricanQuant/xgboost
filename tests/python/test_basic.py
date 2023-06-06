@@ -43,8 +43,8 @@ class TestBasic(unittest.TestCase):
         assert not lazy_isinstance(a, 'numpy', 'dataframe')
 
     def test_basic(self):
-        dtrain = xgb.DMatrix(dpath + 'agaricus.txt.train')
-        dtest = xgb.DMatrix(dpath + 'agaricus.txt.test')
+        dtrain = xgb.DMatrix(f'{dpath}agaricus.txt.train')
+        dtest = xgb.DMatrix(f'{dpath}agaricus.txt.test')
         param = {'max_depth': 2, 'eta': 1,
                  'objective': 'binary:logistic'}
         # specify validations set to watch performance
@@ -78,8 +78,8 @@ class TestBasic(unittest.TestCase):
         assert np.sum(np.abs(preds2 - preds)) == 0
 
     def test_record_results(self):
-        dtrain = xgb.DMatrix(dpath + 'agaricus.txt.train')
-        dtest = xgb.DMatrix(dpath + 'agaricus.txt.test')
+        dtrain = xgb.DMatrix(f'{dpath}agaricus.txt.train')
+        dtest = xgb.DMatrix(f'{dpath}agaricus.txt.test')
         param = {'max_depth': 2, 'eta': 1, 'verbosity': 0,
                  'objective': 'binary:logistic'}
         # specify validations set to watch performance
@@ -95,8 +95,8 @@ class TestBasic(unittest.TestCase):
         assert res2 == result
 
     def test_multiclass(self):
-        dtrain = xgb.DMatrix(dpath + 'agaricus.txt.train')
-        dtest = xgb.DMatrix(dpath + 'agaricus.txt.test')
+        dtrain = xgb.DMatrix(f'{dpath}agaricus.txt.train')
+        dtest = xgb.DMatrix(f'{dpath}agaricus.txt.test')
         param = {'max_depth': 2, 'eta': 1, 'verbosity': 0, 'num_class': 2}
         # specify validations set to watch performance
         watchlist = [(dtest, 'eval'), (dtrain, 'train')]
@@ -180,7 +180,7 @@ class TestBasic(unittest.TestCase):
 
 
     def test_cv(self):
-        dm = xgb.DMatrix(dpath + 'agaricus.txt.train')
+        dm = xgb.DMatrix(f'{dpath}agaricus.txt.train')
         params = {'max_depth': 2, 'eta': 1, 'verbosity': 0,
                   'objective': 'binary:logistic'}
 
@@ -190,7 +190,7 @@ class TestBasic(unittest.TestCase):
         assert len(cv) == (4)
 
     def test_cv_no_shuffle(self):
-        dm = xgb.DMatrix(dpath + 'agaricus.txt.train')
+        dm = xgb.DMatrix(f'{dpath}agaricus.txt.train')
         params = {'max_depth': 2, 'eta': 1, 'verbosity': 0,
                   'objective': 'binary:logistic'}
 
@@ -201,7 +201,7 @@ class TestBasic(unittest.TestCase):
         assert len(cv) == (4)
 
     def test_cv_explicit_fold_indices(self):
-        dm = xgb.DMatrix(dpath + 'agaricus.txt.train')
+        dm = xgb.DMatrix(f'{dpath}agaricus.txt.train')
         params = {'max_depth': 2, 'eta': 1, 'verbosity': 0, 'objective':
                   'binary:logistic'}
         folds = [

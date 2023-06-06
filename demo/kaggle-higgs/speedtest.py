@@ -10,7 +10,12 @@ test_size = 550000
 dpath = 'data'
 
 # load in training data, directly use numpy
-dtrain = np.loadtxt( dpath+'/training.csv', delimiter=',', skiprows=1, converters={32: lambda x:int(x=='s') } )
+dtrain = np.loadtxt(
+    f'{dpath}/training.csv',
+    delimiter=',',
+    skiprows=1,
+    converters={32: lambda x: int(x == 's')},
+)
 print ('finish loading from csv ')
 
 label  = dtrain[:,32]
@@ -28,16 +33,14 @@ print ('weight statistics: wpos=%g, wneg=%g, ratio=%g' % ( sum_wpos, sum_wneg, s
 xgmat = xgb.DMatrix( data, label=label, missing = -999.0, weight=weight )
 
 # setup parameters for xgboost
-param = {}
-# use logistic regression loss
-param['objective'] = 'binary:logitraw'
-# scale weight of positive examples
-param['scale_pos_weight'] = sum_wneg/sum_wpos
-param['bst:eta'] = 0.1
-param['bst:max_depth'] = 6
-param['eval_metric'] = 'auc'
-param['nthread'] = 4
-
+param = {
+    'objective': 'binary:logitraw',
+    'scale_pos_weight': sum_wneg / sum_wpos,
+    'bst:eta': 0.1,
+    'bst:max_depth': 6,
+    'eval_metric': 'auc',
+    'nthread': 4,
+}
 plst = param.items()+[('eval_metric', 'ams@0.15')]
 
 watchlist = [ (xgmat,'train') ]
@@ -48,7 +51,7 @@ print ("training GBM from sklearn")
 tmp = time.time()
 gbm = GradientBoostingClassifier(n_estimators=num_round, max_depth=6, verbose=2)
 gbm.fit(data, label)
-print ("sklearn.GBM costs: %s seconds" % str(time.time() - tmp))
+print(f"sklearn.GBM costs: {str(time.time() - tmp)} seconds")
 #raw_input()
 print ("training xgboost")
 threads = [1, 2, 4, 16]

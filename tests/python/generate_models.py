@@ -19,23 +19,19 @@ target_dir = 'models'
 
 
 def booster_bin(model):
-    return os.path.join(target_dir,
-                        'xgboost-' + version + '.' + model + '.bin')
+    return os.path.join(target_dir, f'xgboost-{version}.{model}.bin')
 
 
 def booster_json(model):
-    return os.path.join(target_dir,
-                        'xgboost-' + version + '.' + model + '.json')
+    return os.path.join(target_dir, f'xgboost-{version}.{model}.json')
 
 
 def skl_bin(model):
-    return os.path.join(target_dir,
-                        'xgboost_scikit-' + version + '.' + model + '.bin')
+    return os.path.join(target_dir, f'xgboost_scikit-{version}.{model}.bin')
 
 
 def skl_json(model):
-    return os.path.join(target_dir,
-                        'xgboost_scikit-' + version + '.' + model + '.json')
+    return os.path.join(target_dir, f'xgboost_scikit-{version}.{model}.json')
 
 
 def generate_regression_model():

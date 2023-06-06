@@ -102,7 +102,7 @@ class BuildExt(build_ext.build_ext):  # pylint: disable=too-many-ancestors
         for k, v in USER_OPTIONS.items():
             arg = k.replace('-', '_').upper()
             value = str(v[2])
-            cmake_cmd.append('-D' + arg + '=' + value)
+            cmake_cmd.append(f'-D{arg}={value}')
             if k == 'USE_OPENMP' and use_omp == 0:
                 continue
 
@@ -111,8 +111,7 @@ class BuildExt(build_ext.build_ext):  # pylint: disable=too-many-ancestors
 
         if system() != 'Windows':
             nproc = os.cpu_count()
-            subprocess.check_call([build_tool, '-j' + str(nproc)],
-                                  cwd=build_dir)
+            subprocess.check_call([build_tool, f'-j{str(nproc)}'], cwd=build_dir)
         else:
             subprocess.check_call(['cmake', '--build', '.',
                                    '--config', 'Release'], cwd=build_dir)
@@ -138,11 +137,7 @@ class BuildExt(build_ext.build_ext):  # pylint: disable=too-many-ancestors
         self.logger.info('Building from source. %s', libxgboost)
         if not os.path.exists(build_dir):
             os.mkdir(build_dir)
-        if shutil.which('ninja'):
-            build_tool = 'ninja'
-        else:
-            build_tool = 'make'
-
+        build_tool = 'ninja' if shutil.which('ninja') else 'make'
         if system() == 'Windows':
             # Pick up from LGB, just test every possible tool chain.
             for vs in ('-GVisual Studio 16 2019', '-GVisual Studio 15 2017',

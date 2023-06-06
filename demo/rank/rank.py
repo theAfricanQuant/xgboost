@@ -12,21 +12,15 @@ x_test, y_test = load_svmlight_file("mq2008.test")
 group_train = []
 with open("mq2008.train.group", "r") as f:
     data = f.readlines()
-    for line in data:
-        group_train.append(int(line.split("\n")[0]))
-
+    group_train.extend(int(line.split("\n")[0]) for line in data)
 group_valid = []
 with open("mq2008.vali.group", "r") as f:
     data = f.readlines()
-    for line in data:
-        group_valid.append(int(line.split("\n")[0]))
-
+    group_valid.extend(int(line.split("\n")[0]) for line in data)
 group_test = []
 with open("mq2008.test.group", "r") as f:
     data = f.readlines()
-    for line in data:
-        group_test.append(int(line.split("\n")[0]))
-
+    group_test.extend(int(line.split("\n")[0]) for line in data)
 train_dmatrix = DMatrix(x_train, y_train)
 valid_dmatrix = DMatrix(x_valid, y_valid)
 test_dmatrix = DMatrix(x_test)

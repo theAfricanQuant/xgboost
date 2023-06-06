@@ -15,13 +15,10 @@ import warnings
 
 def save_label_encoder(le):
     '''Save the label encoder in XGBClassifier'''
-    meta = dict()
-    for k, v in le.__dict__.items():
-        if isinstance(v, np.ndarray):
-            meta[k] = v.tolist()
-        else:
-            meta[k] = v
-    return meta
+    return {
+        k: v.tolist() if isinstance(v, np.ndarray) else v
+        for k, v in le.__dict__.items()
+    }
 
 
 def xgboost_skl_90to100(skl_model):
@@ -46,7 +43,7 @@ def xgboost_skl_90to100(skl_model):
                 json.dumps({k: v})
                 model[k] = v
             except TypeError:
-                warnings.warn(str(k) + ' is not saved in Scikit-Learn meta.')
+                warnings.warn(f'{str(k)} is not saved in Scikit-Learn meta.')
     booster = old.get_booster()
     # Store the JSON serialization as an attribute
     booster.set_attr(scikit_learn=json.dumps(model))
@@ -54,7 +51,7 @@ def xgboost_skl_90to100(skl_model):
     # Save it into a native model.
     i = 0
     while True:
-        path = 'xgboost_native_model_from_' + skl_model + '-' + str(i) + '.bin'
+        path = f'xgboost_native_model_from_{skl_model}-{str(i)}.bin'
         if os.path.exists(path):
             i += 1
             continue

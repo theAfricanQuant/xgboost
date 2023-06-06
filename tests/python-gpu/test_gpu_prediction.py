@@ -76,10 +76,7 @@ class TestGPUPredict(unittest.TestCase):
         dtrain = xgb.DMatrix(X_train, label=y_train)
         dtest = xgb.DMatrix(X_test)
 
-        params = {}
-        params["tree_method"] = "gpu_hist"
-
-        params['predictor'] = "gpu_predictor"
+        params = {"tree_method": "gpu_hist", 'predictor': "gpu_predictor"}
         bst_gpu_predict = xgb.train(params, dtrain)
 
         params['predictor'] = "cpu_predictor"

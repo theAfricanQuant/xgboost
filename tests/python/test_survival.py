@@ -51,7 +51,7 @@ def test_aft_survival_toy_data():
     for tree in model_json:
         assert gather_split_thresholds(tree).issubset({2.5, 3.5, 4.5})
 
-@pytest.mark.skipif(**tm.no_pandas())  
+@pytest.mark.skipif(**tm.no_pandas())
 def test_aft_survival_demo_data():
     import pandas as pd
     df = pd.read_csv(dpath / 'veterans_lung_cancer.csv')
@@ -77,7 +77,7 @@ def test_aft_survival_demo_data():
     dists = ['normal', 'logistic', 'extreme']
     for dist in dists:
         params = base_params
-        params.update({'aft_loss_distribution': dist})
+        params['aft_loss_distribution'] = dist
         evals_result = {}
         bst = xgb.train(params, dtrain, num_boost_round=500, evals=[(dtrain, 'train')],
                         evals_result=evals_result)

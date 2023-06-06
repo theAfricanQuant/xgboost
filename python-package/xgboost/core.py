@@ -113,7 +113,7 @@ def _expect(expectations, got):
         msg += str(expectations[t])
         msg += ' or '
     msg += str(expectations[-1])
-    msg += '.  Got ' + str(got)
+    msg += f'.  Got {str(got)}'
     return msg
 
 
@@ -156,14 +156,29 @@ def _load_lib():
     if not lib_success:
         libname = os.path.basename(lib_paths[0])
         raise XGBoostError(
-            'XGBoost Library ({}) could not be loaded.\n'.format(libname) +
-            'Likely causes:\n' +
-            '  * OpenMP runtime is not installed ' +
-            '(vcomp140.dll or libgomp-1.dll for Windows, libomp.dylib for Mac OSX, ' +
-            'libgomp.so for Linux and other UNIX-like OSes). Mac OSX users: Run ' +
-            '`brew install libomp` to install OpenMP runtime.\n' +
-            '  * You are running 32-bit Python on a 64-bit OS\n' +
-            'Error message(s): {}\n'.format(os_error_list))
+            (
+                (
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        f'XGBoost Library ({libname}) could not be loaded.\n'
+                                        + 'Likely causes:\n'
+                                    )
+                                    + '  * OpenMP runtime is not installed '
+                                )
+                                + '(vcomp140.dll or libgomp-1.dll for Windows, libomp.dylib for Mac OSX, '
+                            )
+                            + 'libgomp.so for Linux and other UNIX-like OSes). Mac OSX users: Run '
+                        )
+                        + '`brew install libomp` to install OpenMP runtime.\n'
+                    )
+                    + '  * You are running 32-bit Python on a 64-bit OS\n'
+                )
+                + f'Error message(s): {os_error_list}\n'
+            )
+        )
     lib.XGBGetLastError.restype = ctypes.c_char_p
     lib.callback = _get_log_callback_func()
     if lib.XGBRegisterLogCallback(lib.callback) != 0:
@@ -197,11 +212,10 @@ def ctypes2numpy(cptr, length, dtype):
         np.uint32: ctypes.c_uint,
     }
     if dtype not in NUMPY_TO_CTYPES_MAPPING:
-        raise RuntimeError('Supported types: {}'.format(
-            NUMPY_TO_CTYPES_MAPPING.keys()))
+        raise RuntimeError(f'Supported types: {NUMPY_TO_CTYPES_MAPPING.keys()}')
     ctype = NUMPY_TO_CTYPES_MAPPING[dtype]
     if not isinstance(cptr, ctypes.POINTER(ctype)):
-        raise RuntimeError('expected {} pointer'.format(ctype))
+        raise RuntimeError(f'expected {ctype} pointer')
     res = np.zeros(length, dtype=dtype)
     if not ctypes.memmove(res.ctypes.data, cptr, length * res.strides[0]):
         raise RuntimeError('memmove failed')
@@ -219,9 +233,7 @@ def ctypes2cupy(cptr, length, dtype):
         cupy.uint32: ctypes.c_uint
     }
     if dtype not in CUPY_TO_CTYPES_MAPPING.keys():
-        raise RuntimeError('Supported types: {}'.format(
-            CUPY_TO_CTYPES_MAPPING.keys()
-        ))
+        raise RuntimeError(f'Supported types: {CUPY_TO_CTYPES_MAPPING.keys()}')
     addr = ctypes.cast(cptr, ctypes.c_void_p).value
     # pylint: disable=c-extension-no-member,no-member
     device = cupy.cuda.runtime.pointerGetAttributes(addr).device
@@ -234,8 +246,7 @@ def ctypes2cupy(cptr, length, dtype):
     # pylint: disable=unexpected-keyword-arg
     mem = cupy.ndarray((length.value, ), dtype=dtype, memptr=memptr)
     assert mem.device.id == device
-    arr = cupy.array(mem, copy=True)
-    return arr
+    return cupy.array(mem, copy=True)
 
 
 def ctypes2buffer(cptr, length):
@@ -330,8 +341,7 @@ def _cudf_array_interfaces(df):
         if 'mask' in interface:
             interface['mask'] = interface['mask'].__cuda_array_interface__
         interfaces.append(interface)
-    interfaces_str = bytes(json.dumps(interfaces, indent=2), 'utf-8')
-    return interfaces_str
+    return bytes(json.dumps(interfaces, indent=2), 'utf-8')
 
 
 def _maybe_cudf_dataframe(data, feature_names, feature_types):
@@ -350,10 +360,7 @@ def _maybe_cudf_dataframe(data, feature_names, feature_types):
         else:
             feature_names = data.columns.format()
     if feature_types is None:
-        if isinstance(data, CUDF_Series):
-            dtypes = [data.dtype]
-        else:
-            dtypes = data.dtypes
+        dtypes = [data.dtype] if isinstance(data, CUDF_Series) else data.dtypes
         feature_types = [PANDAS_DTYPE_MAPPER[d.name] for d in dtypes]
     return data, feature_names, feature_types
 
@@ -380,10 +387,11 @@ def _maybe_dt_data(data, feature_names, feature_types,
         return data, None, None
 
     data_types_names = tuple(lt.name for lt in data.ltypes)
-    bad_fields = [data.names[i]
-                  for i, type_name in enumerate(data_types_names)
-                  if type_name not in DT_TYPE_MAPPER]
-    if bad_fields:
+    if bad_fields := [
+        data.names[i]
+        for i, type_name in enumerate(data_types_names)
+        if type_name not in DT_TYPE_MAPPER
+    ]:
         msg = """DataFrame.types for data must be int, float or bool.
                 Did not expect the data types in fields """
         raise ValueError(msg + ', '.join(bad_fields))
@@ -545,8 +553,7 @@ class DMatrix(object):
                 csr = scipy.sparse.csr_matrix(data)
                 self._init_from_csr(csr)
             except Exception:
-                raise TypeError('can not initialize DMatrix from'
-                                ' {}'.format(type(data).__name__))
+                raise TypeError(f'can not initialize DMatrix from {type(data).__name__}')
 
         if label is not None:
             self.set_label(label)
@@ -561,8 +568,7 @@ class DMatrix(object):
     def _init_from_csr(self, csr):
         """Initialize data from a CSR matrix."""
         if len(csr.indices) != len(csr.data):
-            raise ValueError('length mismatch: {} vs {}'.format(
-                len(csr.indices), len(csr.data)))
+            raise ValueError(f'length mismatch: {len(csr.indices)} vs {len(csr.data)}')
         handle = ctypes.c_void_p()
         _check_call(_LIB.XGDMatrixCreateFromCSREx(
             c_array(ctypes.c_size_t, csr.indptr),
@@ -577,8 +583,7 @@ class DMatrix(object):
     def _init_from_csc(self, csc):
         """Initialize data from a CSC matrix."""
         if len(csc.indices) != len(csc.data):
-            raise ValueError('length mismatch: {} vs {}'.format(
-                len(csc.indices), len(csc.data)))
+            raise ValueError(f'length mismatch: {len(csc.indices)} vs {len(csc.data)}')
         handle = ctypes.c_void_p()
         _check_call(_LIB.XGDMatrixCreateFromCSCEx(
             c_array(ctypes.c_size_t, csc.indptr),
@@ -1005,9 +1010,11 @@ class DMatrix(object):
                 msg = 'feature_names must have the same length as data'
                 raise ValueError(msg)
             # prohibit to use symbols may affect to parse. e.g. []<
-            if not all(isinstance(f, STRING_TYPES) and
-                       not any(x in f for x in set(('[', ']', '<')))
-                       for f in feature_names):
+            if not all(
+                isinstance(f, STRING_TYPES)
+                and all(x not in f for x in {'[', ']', '<'})
+                for f in feature_names
+            ):
                 raise ValueError('feature_names must be string, and may not contain [, ] or <')
         else:
             # reset feature_types also
@@ -1141,7 +1148,7 @@ class Booster(object):
         """
         for d in cache:
             if not isinstance(d, DMatrix):
-                raise TypeError('invalid cache item: {}'.format(type(d).__name__), cache)
+                raise TypeError(f'invalid cache item: {type(d).__name__}', cache)
             self._validate_features(d)
 
         dmats = c_array(ctypes.c_void_p, [d.handle for d in cache])
@@ -1173,9 +1180,7 @@ class Booster(object):
             self.__dict__.update(state)
         elif isinstance(model_file, (STRING_TYPES, os_PathLike, bytearray)):
             self.load_model(model_file)
-        elif model_file is None:
-            pass
-        else:
+        elif model_file is not None:
             raise TypeError('Unknown type:', model_file)
 
     def __del__(self):
@@ -1289,9 +1294,7 @@ class Booster(object):
         success = ctypes.c_int()
         _check_call(_LIB.XGBoosterGetAttr(
             self.handle, c_str(key), ctypes.byref(ret), ctypes.byref(success)))
-        if success.value != 0:
-            return py_str(ret.value)
-        return None
+        return py_str(ret.value) if success.value != 0 else None
 
     def attributes(self):
         """Get attributes stored in the Booster as a dictionary.
@@ -1359,8 +1362,7 @@ class Booster(object):
 
         """
         if not isinstance(dtrain, DMatrix):
-            raise TypeError('invalid training matrix: {}'.format(
-                type(dtrain).__name__))
+            raise TypeError(f'invalid training matrix: {type(dtrain).__name__}')
         self._validate_features(dtrain)
 
         if fobj is None:
@@ -1388,9 +1390,9 @@ class Booster(object):
 
         """
         if len(grad) != len(hess):
-            raise ValueError('grad / hess length mismatch: {} / {}'.format(len(grad), len(hess)))
+            raise ValueError(f'grad / hess length mismatch: {len(grad)} / {len(hess)}')
         if not isinstance(dtrain, DMatrix):
-            raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
+            raise TypeError(f'invalid training matrix: {type(dtrain).__name__}')
         self._validate_features(dtrain)
 
         _check_call(_LIB.XGBoosterBoostOneIter(self.handle, dtrain.handle,
@@ -1418,11 +1420,9 @@ class Booster(object):
         """
         for d in evals:
             if not isinstance(d[0], DMatrix):
-                raise TypeError('expected DMatrix, got {}'.format(
-                    type(d[0]).__name__))
+                raise TypeError(f'expected DMatrix, got {type(d[0]).__name__}')
             if not isinstance(d[1], STRING_TYPES):
-                raise TypeError('expected string, got {}'.format(
-                    type(d[1]).__name__))
+                raise TypeError(f'expected string, got {type(d[1]).__name__}')
             self._validate_features(d[0])
 
         dmats = c_array(ctypes.c_void_p, [d[0].handle for d in evals])
@@ -1744,8 +1744,9 @@ class Booster(object):
             predt = reshape_output(mem, rows)
             return predt
 
-        raise TypeError('Data type:' + str(type(data)) +
-                        ' not supported by inplace prediction.')
+        raise TypeError(
+            f'Data type:{str(type(data))} not supported by inplace prediction.'
+        )
 
     def save_model(self, fname):
         """Save the model to a file.
@@ -1839,7 +1840,7 @@ class Booster(object):
             fout.write('\n]')
         else:
             for i, _ in enumerate(ret):
-                fout.write('booster[{}]:\n'.format(i))
+                fout.write(f'booster[{i}]:\n')
                 fout.write(ret[i])
         if need_close:
             fout.close()
@@ -1879,17 +1880,16 @@ class Booster(object):
                 c_str(dump_format),
                 ctypes.byref(length),
                 ctypes.byref(sarr)))
-        else:
-            if fmap != '' and not os.path.exists(fmap):
-                raise ValueError("No such file: {0}".format(fmap))
+        elif fmap == '' or os.path.exists(fmap):
             _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
                                                   c_str(fmap),
                                                   ctypes.c_int(with_stats),
                                                   c_str(dump_format),
                                                   ctypes.byref(length),
                                                   ctypes.byref(sarr)))
-        res = from_cstr_to_pystr(sarr, length)
-        return res
+        else:
+            raise ValueError("No such file: {0}".format(fmap))
+        return from_cstr_to_pystr(sarr, length)
 
     def get_fscore(self, fmap=''):
         """Get feature importance of each feature.
@@ -1938,8 +1938,9 @@ class Booster(object):
         """
         fmap = os_fspath(fmap)
         if getattr(self, 'booster', None) is not None and self.booster not in {'gbtree', 'dart'}:
-            raise ValueError('Feature importance is not defined for Booster type {}'
-                             .format(self.booster))
+            raise ValueError(
+                f'Feature importance is not defined for Booster type {self.booster}'
+            )
 
         allowed_importance_types = ['weight', 'gain', 'cover', 'total_gain', 'total_cover']
         if importance_type not in allowed_importance_types:
@@ -2035,8 +2036,7 @@ class Booster(object):
                              'Install pandas before calling again.'))
 
         if getattr(self, 'booster', None) is not None and self.booster not in {'gbtree', 'dart'}:
-            raise ValueError('This method is not defined for Booster type {}'
-                             .format(self.booster))
+            raise ValueError(f'This method is not defined for Booster type {self.booster}')
 
         tree_ids = []
         node_ids = []
@@ -2061,8 +2061,6 @@ class Booster(object):
                     parse = arr[0].split(':')
                     stats = re.split('=|,', parse[1])
 
-                    # append to lists
-                    tree_ids.append(i)
                     node_ids.append(int(re.findall(r'\b\d+\b', parse[0])[0]))
                     fids.append('Leaf')
                     splits.append(float('NAN'))
@@ -2071,26 +2069,25 @@ class Booster(object):
                     missings.append(float('NAN'))
                     gains.append(float(stats[1]))
                     covers.append(float(stats[3]))
-                # Not a Leaf Node
                 else:
                     # parse string
                     fid = arr[1].split(']')
                     parse = fid[0].split('<')
                     stats = re.split('=|,', fid[1])
 
-                    # append to lists
-                    tree_ids.append(i)
                     node_ids.append(int(re.findall(r'\b\d+\b', arr[0])[0]))
                     fids.append(parse[0])
                     splits.append(float(parse[1]))
                     str_i = str(i)
-                    y_directs.append(str_i + '-' + stats[1])
-                    n_directs.append(str_i + '-' + stats[3])
-                    missings.append(str_i + '-' + stats[5])
+                    y_directs.append(f'{str_i}-{stats[1]}')
+                    n_directs.append(f'{str_i}-{stats[3]}')
+                    missings.append(f'{str_i}-{stats[5]}')
                     gains.append(float(stats[7]))
                     covers.append(float(stats[9]))
 
-        ids = [str(t_id) + '-' + str(n_id) for t_id, n_id in zip(tree_ids, node_ids)]
+                # append to lists
+                tree_ids.append(i)
+        ids = [f'{str(t_id)}-{str(n_id)}' for t_id, n_id in zip(tree_ids, node_ids)]
         df = DataFrame({'Tree': tree_ids, 'Node': node_ids, 'ID': ids,
                         'Feature': fids, 'Split': splits, 'Yes': y_directs,
                         'No': n_directs, 'Missing': missings, 'Gain': gains,
@@ -2110,24 +2107,21 @@ class Booster(object):
         if self.feature_names is None:
             self.feature_names = data.feature_names
             self.feature_types = data.feature_types
-        else:
-            # Booster can't accept data with different feature names
-            if self.feature_names != data.feature_names:
-                dat_missing = set(self.feature_names) - set(data.feature_names)
-                my_missing = set(data.feature_names) - set(self.feature_names)
+        elif self.feature_names != data.feature_names:
+            msg = 'feature_names mismatch: {0} {1}'
 
-                msg = 'feature_names mismatch: {0} {1}'
+            dat_missing = set(self.feature_names) - set(data.feature_names)
+            my_missing = set(data.feature_names) - set(self.feature_names)
+            if dat_missing:
+                msg += ('\nexpected ' + ', '.join(
+                    str(s) for s in dat_missing) + ' in input data')
 
-                if dat_missing:
-                    msg += ('\nexpected ' + ', '.join(
-                        str(s) for s in dat_missing) + ' in input data')
+            if my_missing:
+                msg += ('\ntraining data did not have the following fields: ' +
+                        ', '.join(str(s) for s in my_missing))
 
-                if my_missing:
-                    msg += ('\ntraining data did not have the following fields: ' +
-                            ', '.join(str(s) for s in my_missing))
-
-                raise ValueError(msg.format(self.feature_names,
-                                            data.feature_names))
+            raise ValueError(msg.format(self.feature_names,
+                                        data.feature_names))
 
     def get_split_value_histogram(self, feature, fmap='', bins=None,
                                   as_pandas=True):
@@ -2168,7 +2162,7 @@ class Booster(object):
 
         if as_pandas and PANDAS_INSTALLED:
             return DataFrame(nph, columns=['SplitValue', 'Count'])
-        if as_pandas and not PANDAS_INSTALLED:
+        if as_pandas:
             sys.stderr.write(
                 "Returning histogram as ndarray (as_pandas == True, but pandas is not installed).")
         return nph

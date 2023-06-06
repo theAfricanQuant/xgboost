@@ -154,7 +154,7 @@ class TestDMatrix(unittest.TestCase):
 
             bst = xgb.train(params, dm, num_boost_round=10)
             scores = bst.get_fscore()
-            assert list(sorted(k for k in scores)) == features
+            assert list(sorted(iter(scores))) == features
 
             dummy = np.random.randn(5, 5)
             dm = xgb.DMatrix(dummy, feature_names=features)
@@ -165,7 +165,7 @@ class TestDMatrix(unittest.TestCase):
             self.assertRaises(ValueError, bst.predict, dm)
 
     def test_get_info(self):
-        dtrain = xgb.DMatrix(dpath + 'agaricus.txt.train')
+        dtrain = xgb.DMatrix(f'{dpath}agaricus.txt.train')
         dtrain.get_float_info('label')
         dtrain.get_float_info('weight')
         dtrain.get_float_info('base_margin')

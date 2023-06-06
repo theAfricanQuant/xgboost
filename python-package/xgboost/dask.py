@@ -51,7 +51,7 @@ def _start_tracker(host, n_workers):
     """Start Rabit tracker """
     env = {'DMLC_NUM_WORKER': n_workers}
     rabit_context = RabitTracker(hostIP=host, nslave=n_workers)
-    env.update(rabit_context.slave_envs())
+    env |= rabit_context.slave_envs()
 
     rabit_context.start(n_workers)
     thread = Thread(target=rabit_context.join)
@@ -65,8 +65,10 @@ def _assert_dask_support():
         raise ImportError(
             'Dask needs to be installed in order to use this module')
     if platform.system() == 'Windows':
-        msg = 'Windows is not officially supported for dask/xgboost,'
-        msg += ' contribution are welcomed.'
+        msg = (
+            'Windows is not officially supported for dask/xgboost,'
+            + ' contribution are welcomed.'
+        )
         LOGGER.warning(msg)
 
 
@@ -75,8 +77,7 @@ class RabitContext:
     def __init__(self, args):
         self.args = args
         worker = distributed_get_worker()
-        self.args.append(
-            ('DMLC_TASK_ID=[xgboost.dask]:' + str(worker.address)).encode())
+        self.args.append(f'DMLC_TASK_ID=[xgboost.dask]:{str(worker.address)}'.encode())
 
     def __enter__(self):
         rabit.init(self.args)
@@ -115,13 +116,11 @@ def _xgb_get_client(client):
     if not isinstance(client, (type(get_client()), type(None))):
         raise TypeError(
             _expect([type(get_client()), type(None)], type(client)))
-    ret = get_client() if client is None else client
-    return ret
+    return get_client() if client is None else client
 
 
 def _get_client_workers(client):
-    workers = client.scheduler_info()['workers']
-    return workers
+    return client.scheduler_info()['workers']
 
 
 class DaskDMatrix:
@@ -266,16 +265,15 @@ class DaskDMatrix:
         list_of_parts = self.worker_map[worker.address]
         client = get_client()
         list_of_parts_value = client.gather(list_of_parts)
-        result = []
-        for i, part in enumerate(list_of_parts):
-            result.append((list_of_parts_value[i][0],
-                           self.partition_order[part.key]))
-        return result
+        return [
+            (list_of_parts_value[i][0], self.partition_order[part.key])
+            for i, part in enumerate(list_of_parts)
+        ]
 
     def get_worker_parts(self, worker):
         '''Get mapped parts of data in each worker.'''
         list_of_parts = self.worker_map[worker.address]
-        assert list_of_parts, 'data in ' + worker.address + ' was moved.'
+        assert list_of_parts, f'data in {worker.address} was moved.'
         assert isinstance(list_of_parts, list)
 
         # `get_worker_parts` is launched inside worker.  In dask side
@@ -309,35 +307,30 @@ class DaskDMatrix:
         '''
         if worker.address not in set(self.worker_map.keys()):
             msg = 'worker {address} has an empty DMatrix.  ' \
-                'All workers associated with this DMatrix: {workers}'.format(
+                    'All workers associated with this DMatrix: {workers}'.format(
                     address=worker.address,
                     workers=set(self.worker_map.keys()))
             LOGGER.warning(msg)
-            d = DMatrix(numpy.empty((0, 0)),
-                        feature_names=self.feature_names,
-                        feature_types=self.feature_types)
-            return d
-
+            return DMatrix(
+                numpy.empty((0, 0)),
+                feature_names=self.feature_names,
+                feature_types=self.feature_types,
+            )
         data, labels, weights = self.get_worker_parts(worker)
 
         data = concat(data)
 
-        if self.has_label:
-            labels = concat(labels)
-        else:
-            labels = None
-        if self.has_weights:
-            weights = concat(weights)
-        else:
-            weights = None
-        dmatrix = DMatrix(data,
-                          labels,
-                          weight=weights,
-                          missing=self.missing,
-                          feature_names=self.feature_names,
-                          feature_types=self.feature_types,
-                          nthread=worker.nthreads)
-        return dmatrix
+        labels = concat(labels) if self.has_label else None
+        weights = concat(weights) if self.has_weights else None
+        return DMatrix(
+            data,
+            labels,
+            weight=weights,
+            missing=self.missing,
+            feature_names=self.feature_names,
+            feature_types=self.feature_types,
+            nthread=worker.nthreads,
+        )
 
     def get_worker_data_shape(self, worker):
         '''Get the shape of data X in each worker.'''
@@ -362,8 +355,7 @@ def _get_rabit_args(worker_map, client):
 
     env = client.run_on_scheduler(_start_tracker, host.strip('/:'),
                                   len(worker_map))
-    rabit_args = [('%s=%s' % item).encode() for item in env.items()]
-    return rabit_args
+    return [('%s=%s' % item).encode() for item in env.items()]
 
 # train and predict methods are supposed to be "functional", which meets the
 # dask paradigm.  But as a side effect, the `evals_result` in single-node API
@@ -402,7 +394,7 @@ def train(client, params, dtrain, *args, evals=(), **kwargs):
     '''
     _assert_dask_support()
     client = _xgb_get_client(client)
-    if 'evals_result' in kwargs.keys():
+    if 'evals_result' in kwargs:
         raise ValueError(
             'evals_result is not supported in dask interface.',
             'The evaluation history is returned as result of training.')
@@ -433,12 +425,12 @@ def train(client, params, dtrain, *args, evals=(), **kwargs):
             if 'nthread' in local_param.keys() and \
                local_param['nthread'] is not None and \
                local_param['nthread'] != worker.nthreads:
-                msg += '`nthread` is specified.  ' + msg
+                msg += f'`nthread` is specified.  {msg}'
                 LOGGER.warning(msg)
             elif 'n_jobs' in local_param.keys() and \
                  local_param['n_jobs'] is not None and \
                  local_param['n_jobs'] != worker.nthreads:
-                msg = '`n_jobs` is specified.  ' + msg
+                msg = f'`n_jobs` is specified.  {msg}'
                 LOGGER.warning(msg)
             else:
                 local_param['nthread'] = worker.nthreads
@@ -687,7 +679,7 @@ def _evaluation_matrices(client, validation_set, sample_weights, missing):
                  if sample_weights is not None else None)
             dmat = DaskDMatrix(client=client, data=e[0], label=e[1], weight=w,
                                missing=missing)
-            evals.append((dmat, 'validation_{}'.format(i)))
+            evals.append((dmat, f'validation_{i}'))
     else:
         evals = None
     return evals
@@ -741,8 +733,7 @@ class DaskScikitLearnBase(XGBModel):
     @property
     def client(self):
         '''The dask client used in this model.'''
-        client = _xgb_get_client(self._client)
-        return client
+        return _xgb_get_client(self._client)
 
     @client.setter
     def client(self, clt):
@@ -781,9 +772,9 @@ class DaskXGBRegressor(DaskScikitLearnBase, XGBRegressorBase):
         _assert_dask_support()
         test_dmatrix = DaskDMatrix(client=self.client, data=data,
                                    missing=self.missing)
-        pred_probs = predict(client=self.client,
-                             model=self.get_booster(), data=test_dmatrix)
-        return pred_probs
+        return predict(
+            client=self.client, model=self.get_booster(), data=test_dmatrix
+        )
 
 
 @xgboost_model_doc(
@@ -835,6 +826,6 @@ class DaskXGBClassifier(DaskScikitLearnBase, XGBClassifierBase):
         _assert_dask_support()
         test_dmatrix = DaskDMatrix(client=self.client, data=data,
                                    missing=self.missing)
-        pred_probs = predict(client=self.client,
-                             model=self.get_booster(), data=test_dmatrix)
-        return pred_probs
+        return predict(
+            client=self.client, model=self.get_booster(), data=test_dmatrix
+        )

@@ -24,9 +24,10 @@ def assert_constraint(constraint, tree_method):
     n = 1000
     X, y = make_regression(n, random_state=rng, n_features=1, n_informative=1)
     dtrain = xgb.DMatrix(X, y)
-    param = {}
-    param['tree_method'] = tree_method
-    param['monotone_constraints'] = "(" + str(constraint) + ")"
+    param = {
+        'tree_method': tree_method,
+        'monotone_constraints': f"({str(constraint)})",
+    }
     bst = xgb.train(param, dtrain)
     dpredict = xgb.DMatrix(X[X[:, 0].argsort()])
     pred = bst.predict(dpredict)

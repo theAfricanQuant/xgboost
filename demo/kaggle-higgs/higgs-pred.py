@@ -12,7 +12,7 @@ outfile = 'higgs.pred.csv'
 threshold_ratio = 0.15
 
 # load in training data, directly use numpy
-dtest = np.loadtxt( dpath+'/test.csv', delimiter=',', skiprows=1 )
+dtest = np.loadtxt(f'{dpath}/test.csv', delimiter=',', skiprows=1)
 data   = dtest[:,1:31]
 idx = dtest[:,0]
 
@@ -29,19 +29,15 @@ for k, v in sorted( res, key = lambda x:-x[1] ):
 
 # write out predictions
 ntop = int( threshold_ratio * len(rorder ) )
-fo = open(outfile, 'w')
-nhit = 0
-ntot = 0
-fo.write('EventId,RankOrder,Class\n')
-for k, v in res:
-    if rorder[k] <= ntop:
-        lb = 's'
-        nhit += 1
-    else:
-        lb = 'b'
-    # change output rank order to follow Kaggle convention
-    fo.write('%s,%d,%s\n' % ( k,  len(rorder)+1-rorder[k], lb ) )
-    ntot += 1
-fo.close()
-
+with open(outfile, 'w') as fo:
+    nhit = 0
+    fo.write('EventId,RankOrder,Class\n')
+    for ntot, (k, v) in enumerate(res):
+        if rorder[k] <= ntop:
+            lb = 's'
+            nhit += 1
+        else:
+            lb = 'b'
+        # change output rank order to follow Kaggle convention
+        fo.write('%s,%d,%s\n' % ( k,  len(rorder)+1-rorder[k], lb ) )
 print ('finished writing into prediction file')

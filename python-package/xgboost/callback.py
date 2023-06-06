@@ -205,10 +205,7 @@ def early_stop(stopping_rounds, maximize=False, verbose=True):
 
         state['maximize_score'] = maximize_score
         state['best_iteration'] = 0
-        if maximize_score:
-            state['best_score'] = float('-inf')
-        else:
-            state['best_score'] = float('inf')
+        state['best_score'] = float('-inf') if maximize_score else float('inf')
         msg = '[%d]\t%s' % (
             env.iteration,
             '\t'.join([_fmt_metric(x) for x in env.evaluation_result_list]))
@@ -252,4 +249,5 @@ def early_stop(stopping_rounds, maximize=False, verbose=True):
                 msg = "Stopping. Best iteration:\n{}\n\n"
                 rabit.tracker_print(msg.format(best_msg))
             raise EarlyStopException(best_iteration)
+
     return callback

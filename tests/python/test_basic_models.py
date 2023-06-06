@@ -8,8 +8,8 @@ import pytest
 import locale
 
 dpath = 'demo/data/'
-dtrain = xgb.DMatrix(dpath + 'agaricus.txt.train')
-dtest = xgb.DMatrix(dpath + 'agaricus.txt.test')
+dtrain = xgb.DMatrix(f'{dpath}agaricus.txt.train')
+dtest = xgb.DMatrix(f'{dpath}agaricus.txt.test')
 
 rng = np.random.RandomState(1994)
 
@@ -44,8 +44,8 @@ class TestModels(unittest.TestCase):
         assert err < 0.2
 
     def test_dart(self):
-        dtrain = xgb.DMatrix(dpath + 'agaricus.txt.train')
-        dtest = xgb.DMatrix(dpath + 'agaricus.txt.test')
+        dtrain = xgb.DMatrix(f'{dpath}agaricus.txt.train')
+        dtest = xgb.DMatrix(f'{dpath}agaricus.txt.test')
         param = {'max_depth': 5, 'objective': 'binary:logistic',
                  'eval_metric': 'logloss', 'booster': 'dart', 'verbosity': 1}
         # specify validations set to watch performance
@@ -183,7 +183,7 @@ class TestModels(unittest.TestCase):
 
     def test_boost_from_prediction(self):
         # Re-construct dtrain here to avoid modification
-        margined = xgb.DMatrix(dpath + 'agaricus.txt.train')
+        margined = xgb.DMatrix(f'{dpath}agaricus.txt.train')
         bst = xgb.train({'tree_method': 'hist'}, margined, 1)
         predt_0 = bst.predict(margined, output_margin=True)
         margined.set_base_margin(predt_0)
@@ -238,9 +238,13 @@ class TestModels(unittest.TestCase):
 
     def test_multi_eval_metric(self):
         watchlist = [(dtest, 'eval'), (dtrain, 'train')]
-        param = {'max_depth': 2, 'eta': 0.2, 'verbosity': 1,
-                 'objective': 'binary:logistic'}
-        param['eval_metric'] = ["auc", "logloss", 'error']
+        param = {
+            'max_depth': 2,
+            'eta': 0.2,
+            'verbosity': 1,
+            'objective': 'binary:logistic',
+            'eval_metric': ["auc", "logloss", 'error'],
+        }
         evals_result = {}
         bst = xgb.train(param, dtrain, 4, watchlist, evals_result=evals_result)
         assert isinstance(bst, xgb.core.Booster)

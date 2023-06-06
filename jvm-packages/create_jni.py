@@ -29,7 +29,7 @@ def cd(path):
     path = normpath(path)
     cwd = os.getcwd()
     os.chdir(path)
-    print("cd " + path)
+    print(f"cd {path}")
     try:
         yield path
     finally:
@@ -38,7 +38,7 @@ def cd(path):
 
 def maybe_makedirs(path):
     path = normpath(path)
-    print("mkdir -p " + path)
+    print(f"mkdir -p {path}")
     try:
         os.makedirs(path)
     except OSError as e:
@@ -61,10 +61,7 @@ def cp(source, target):
 def normpath(path):
     """Normalize UNIX path to a native path."""
     normalized = os.path.join(*path.split("/"))
-    if os.path.isabs(path):
-        return os.path.abspath("/") + normalized
-    else:
-        return normalized
+    return os.path.abspath("/") + normalized if os.path.isabs(path) else normalized
 
 
 if __name__ == "__main__":
@@ -83,11 +80,7 @@ if __name__ == "__main__":
                 maybe_generator = ' -G"Visual Studio 14 Win64"'
             else:
                 maybe_generator = ""
-            if sys.platform == "linux":
-                maybe_parallel_build = " -- -j $(nproc)"
-            else:
-                maybe_parallel_build = ""
-
+            maybe_parallel_build = " -- -j $(nproc)" if sys.platform == "linux" else ""
             args = ["-D{0}:BOOL={1}".format(k, v) for k, v in CONFIG.items()]
 
             # if enviorment set rabit_mock
@@ -95,11 +88,11 @@ if __name__ == "__main__":
                 args.append("-DRABIT_MOCK:BOOL=ON")
 
             run("cmake .. " + " ".join(args) + maybe_generator)
-            run("cmake --build . --config Release" + maybe_parallel_build)
+            run(f"cmake --build . --config Release{maybe_parallel_build}")
 
         with cd("demo/regression"):
-            run(sys.executable + " mapfeat.py")
-            run(sys.executable + " mknfold.py machine.txt 1")
+            run(f"{sys.executable} mapfeat.py")
+            run(f"{sys.executable} mknfold.py machine.txt 1")
 
     print("copying native library")
     library_name = {
@@ -108,7 +101,7 @@ if __name__ == "__main__":
         "linux": "libxgboost4j.so"
     }[sys.platform]
     maybe_makedirs("xgboost4j/src/main/resources/lib")
-    cp("../lib/" + library_name, "xgboost4j/src/main/resources/lib")
+    cp(f"../lib/{library_name}", "xgboost4j/src/main/resources/lib")
 
     print("copying pure-Python tracker")
     cp("../dmlc-core/tracker/dmlc_tracker/tracker.py",
@@ -117,8 +110,8 @@ if __name__ == "__main__":
     print("copying train/test files")
     maybe_makedirs("xgboost4j-spark/src/test/resources")
     with cd("../demo/regression"):
-        run("{} mapfeat.py".format(sys.executable))
-        run("{} mknfold.py machine.txt 1".format(sys.executable))
+        run(f"{sys.executable} mapfeat.py")
+        run(f"{sys.executable} mknfold.py machine.txt 1")
 
     for file in glob.glob("../demo/regression/machine.txt.t*"):
         cp(file, "xgboost4j-spark/src/test/resources")

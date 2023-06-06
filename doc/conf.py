@@ -31,25 +31,25 @@ if git_branch is None:
             git.branch('-r', '--contains', 'HEAD')).rstrip('\n').split('\n')
     ]
     git_branch = [x for x in git_branch if 'HEAD' not in x]
-print('git_branch = {}'.format(git_branch[0]))
+print(f'git_branch = {git_branch[0]}')
 try:
     filename, _ = urllib.request.urlretrieve(
-        'https://s3-us-west-2.amazonaws.com/xgboost-docs/{}.tar.bz2'.format(
-            git_branch[0]))
+        f'https://s3-us-west-2.amazonaws.com/xgboost-docs/{git_branch[0]}.tar.bz2'
+    )
     call(
-        'if [ -d tmp ]; then rm -rf tmp; fi; mkdir -p tmp/jvm; cd tmp/jvm; tar xvf {}'
-        .format(filename),
-        shell=True)
+        f'if [ -d tmp ]; then rm -rf tmp; fi; mkdir -p tmp/jvm; cd tmp/jvm; tar xvf {filename}',
+        shell=True,
+    )
 except HTTPError:
     print('JVM doc not found. Skipping...')
 try:
     filename, _ = urllib.request.urlretrieve(
-        'https://s3-us-west-2.amazonaws.com/xgboost-docs/doxygen/{}.tar.bz2'.
-        format(git_branch[0]))
+        f'https://s3-us-west-2.amazonaws.com/xgboost-docs/doxygen/{git_branch[0]}.tar.bz2'
+    )
     call(
-        'mkdir -p tmp/dev; cd tmp/dev; tar xvf {}; mv doc_doxygen/html/* .; rm -rf doc_doxygen'
-        .format(filename),
-        shell=True)
+        f'mkdir -p tmp/dev; cd tmp/dev; tar xvf {filename}; mv doc_doxygen/html/* .; rm -rf doc_doxygen',
+        shell=True,
+    )
 except HTTPError:
     print('C API doc not found. Skipping...')
 
@@ -71,8 +71,8 @@ for mod_name in MOCK_MODULES:
 
 # General information about the project.
 project = u'xgboost'
-author = u'%s developers' % project
-copyright = u'2020, %s' % author
+author = f'{project} developers'
+copyright = f'2020, {author}'
 github_doc_root = 'https://github.com/dmlc/xgboost/tree/master/doc/'
 
 os.environ['XGBOOST_BUILD_DOC'] = '1'
@@ -80,17 +80,6 @@ os.environ['XGBOOST_BUILD_DOC'] = '1'
 import xgboost                  # NOQA
 version = xgboost.__version__
 release = xgboost.__version__
-
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones
-extensions = [
-    'matplotlib.sphinxext.plot_directive',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.intersphinx',
-    'breathe'
-]
 
 graphviz_output_format = 'png'
 plot_formats = [('svg', 300), ('png', 100), ('hires.png', 300)]
@@ -172,9 +161,15 @@ todo_include_todos = False
 html_theme_path = guzzle_sphinx_theme.html_theme_path()
 html_theme = 'guzzle_sphinx_theme'
 
-# Register the theme as an extension to generate a sitemap.xml
-extensions.append("guzzle_sphinx_theme")
-
+extensions = [
+    'matplotlib.sphinxext.plot_directive',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.intersphinx',
+    'breathe',
+    "guzzle_sphinx_theme",
+]
 # Guzzle theme options (see theme.conf for more information)
 html_theme_options = {
     # Set the name of the project to appear in the sidebar
@@ -191,7 +186,7 @@ html_sidebars = {
 html_static_path = ['_static']
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = project + 'doc'
+htmlhelp_basename = f'{project}doc'
 
 # -- Options for LaTeX output ---------------------------------------------
 latex_elements = {
@@ -200,10 +195,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-  (master_doc, '%s.tex' % project, project,
-   author, 'manual'),
-]
+latex_documents = [(master_doc, f'{project}.tex', project, author, 'manual')]
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3.6', None),
@@ -218,11 +210,11 @@ intersphinx_mapping = {
 def run_doxygen(folder):
     """Run the doxygen make command in the designated folder."""
     try:
-        retcode = subprocess.call("cd %s; make doxygen" % folder, shell=True)
+        retcode = subprocess.call(f"cd {folder}; make doxygen", shell=True)
         if retcode < 0:
-            sys.stderr.write("doxygen terminated by signal %s" % (-retcode))
+            sys.stderr.write(f"doxygen terminated by signal {-retcode}")
     except OSError as e:
-        sys.stderr.write("doxygen execution failed: %s" % e)
+        sys.stderr.write(f"doxygen execution failed: {e}")
 
 
 def generate_doxygen_xml(app):

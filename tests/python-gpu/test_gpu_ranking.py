@@ -18,7 +18,7 @@ class TestRanking(unittest.TestCase):
         # download the test data
         cls.dpath = 'demo/rank/'
         src = 'https://s3-us-west-2.amazonaws.com/xgboost-examples/MQ2008.zip'
-        target = cls.dpath + '/MQ2008.zip'
+        target = f'{cls.dpath}/MQ2008.zip'
 
         if os.path.exists(cls.dpath) and os.path.exists(target):
             print("Skipping dataset download...")
@@ -27,12 +27,25 @@ class TestRanking(unittest.TestCase):
             with zipfile.ZipFile(target, 'r') as f:
                 f.extractall(path=cls.dpath)
 
-        (x_train, y_train, qid_train, x_test, y_test, qid_test,
-         x_valid, y_valid, qid_valid) = load_svmlight_files(
-            (cls.dpath + "MQ2008/Fold1/train.txt",
-             cls.dpath + "MQ2008/Fold1/test.txt",
-             cls.dpath + "MQ2008/Fold1/vali.txt"),
-            query_id=True, zero_based=False)
+        (
+            x_train,
+            y_train,
+            qid_train,
+            x_test,
+            y_test,
+            qid_test,
+            x_valid,
+            y_valid,
+            qid_valid,
+        ) = load_svmlight_files(
+            (
+                f"{cls.dpath}MQ2008/Fold1/train.txt",
+                f"{cls.dpath}MQ2008/Fold1/test.txt",
+                f"{cls.dpath}MQ2008/Fold1/vali.txt",
+            ),
+            query_id=True,
+            zero_based=False,
+        )
         # instantiate the matrices
         cls.dtrain = xgboost.DMatrix(x_train, y_train)
         cls.dvalid = xgboost.DMatrix(x_valid, y_valid)
@@ -80,8 +93,8 @@ class TestRanking(unittest.TestCase):
         Cleanup test artifacts from download and unpacking
         :return:
         """
-        os.remove(cls.dpath + "MQ2008.zip")
-        shutil.rmtree(cls.dpath + "MQ2008")
+        os.remove(f"{cls.dpath}MQ2008.zip")
+        shutil.rmtree(f"{cls.dpath}MQ2008")
 
     @classmethod
     def __test_training_with_rank_objective(cls, rank_objective, metric_name, tolerance=1e-02):

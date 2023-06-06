@@ -93,18 +93,16 @@ def plot_importance(booster, ax=None, height=0.2,
     ax.set_yticks(ylocs)
     ax.set_yticklabels(labels)
 
-    if xlim is not None:
-        if not isinstance(xlim, tuple) or len(xlim) != 2:
-            raise ValueError('xlim must be a tuple of 2 elements')
-    else:
+    if xlim is None:
         xlim = (0, max(values) * 1.1)
+    elif not isinstance(xlim, tuple) or len(xlim) != 2:
+        raise ValueError('xlim must be a tuple of 2 elements')
     ax.set_xlim(xlim)
 
-    if ylim is not None:
-        if not isinstance(ylim, tuple) or len(ylim) != 2:
-            raise ValueError('ylim must be a tuple of 2 elements')
-    else:
+    if ylim is None:
         ylim = (-1, len(values))
+    elif not isinstance(ylim, tuple) or len(ylim) != 2:
+        raise ValueError('ylim must be a tuple of 2 elements')
     ax.set_ylim(ylim)
 
     if title is not None:
@@ -173,15 +171,12 @@ def to_graphviz(booster, fmap='', num_trees=0, rankdir=None,
 
     # squash everything back into kwargs again for compatibility
     parameters = 'dot'
-    extra = {}
-    for key, value in kwargs.items():
-        extra[key] = value
-
+    extra = dict(kwargs)
     if rankdir is not None:
         kwargs['graph_attrs'] = {}
         kwargs['graph_attrs']['rankdir'] = rankdir
     for key, value in extra.items():
-        if 'graph_attrs' in kwargs.keys():
+        if 'graph_attrs' in kwargs:
             kwargs['graph_attrs'][key] = value
         else:
             kwargs['graph_attrs'] = {}
@@ -205,8 +200,7 @@ def to_graphviz(booster, fmap='', num_trees=0, rankdir=None,
     tree = booster.get_dump(
         fmap=fmap,
         dump_format=parameters)[num_trees]
-    g = Source(tree)
-    return g
+    return Source(tree)
 
 
 def plot_tree(booster, fmap='', num_trees=0, rankdir=None, ax=None, **kwargs):

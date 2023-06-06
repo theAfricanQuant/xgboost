@@ -22,10 +22,7 @@ def call(args):
     matched = re.search('(workspace|xgboost)/.*(src|tests|include)/.*warning:',
                         error_msg,
                         re.MULTILINE)
-    if matched is None:
-        return_code = 0
-    else:
-        return_code = 1
+    return_code = 0 if matched is None else 1
     return (completed.returncode, return_code, error_msg)
 
 
@@ -43,7 +40,7 @@ class ClangTidy(object):
         self.use_dmlc_gtest = args.use_dmlc_gtest
 
         if args.tidy_version:
-            self.exe = 'clang-tidy-' + str(args.tidy_version)
+            self.exe = f'clang-tidy-{str(args.tidy_version)}'
         else:
             self.exe = 'clang-tidy'
 
@@ -90,7 +87,7 @@ class ClangTidy(object):
         '''Convert nvcc flags to corresponding clang flags.'''
         components = command.split()
         compiler: str = components[0]
-        if compiler.find('nvcc') != -1:
+        if 'nvcc' in compiler:
             compiler = 'clang++'
             components[0] = compiler
         # check each component in a command
@@ -105,9 +102,7 @@ class ClangTidy(object):
                 continue
             elif (components[i] == '-x' and
                   components[i+1] == 'cu'):
-                # -x cu -> -x cuda
-                converted_components.append('-x')
-                converted_components.append('cuda')
+                converted_components.extend(('-x', 'cuda'))
                 components[i+1] = ''
                 continue
             elif components[i].find('-Xcompiler') != -1:
@@ -119,11 +114,10 @@ class ClangTidy(object):
             elif components[i].find('--generate-code') != -1:
                 keyword = 'code=sm'
                 pos = components[i].find(keyword)
-                capability = components[i][pos + len(keyword) + 1:
-                                           pos + len(keyword) + 3]
                 if pos != -1:
-                    converted_components.append(
-                        '--cuda-gpu-arch=sm_' + capability)
+                    capability = components[i][pos + len(keyword) + 1:
+                                               pos + len(keyword) + 3]
+                    converted_components.append(f'--cuda-gpu-arch=sm_{capability}')
             elif components[i].find('--std=c++11') != -1:
                 converted_components.append('-std=c++11')
             elif components[i].startswith('-isystem='):
@@ -135,9 +129,8 @@ class ClangTidy(object):
 
         command = ''
         for c in converted_components:
-            command = command + ' ' + c
-        command = command.strip()
-        return command
+            command = f'{command} {c}'
+        return command.strip()
 
     def _configure_flags(self, path, command):
         src = os.path.join(self.root_path, 'src')
@@ -145,12 +138,14 @@ class ClangTidy(object):
         include = os.path.join(self.root_path, 'include')
         include = include.replace('/', '\\/')
 
-        header_filter = '(' + src + '|' + include + ')'
-        common_args = [self.exe,
-                       "-header-filter=" + header_filter,
-                       '-config='+self.clang_tidy]
-        common_args.append(path)
-        common_args.append('--')
+        header_filter = f'({src}|{include})'
+        common_args = [
+            self.exe,
+            f"-header-filter={header_filter}",
+            f'-config={self.clang_tidy}',
+            path,
+            '--',
+        ]
         command = self.convert_nvcc_command_to_clang(command)
 
         command = command.split()[1:]  # remove clang/c++/g++
@@ -211,7 +206,7 @@ class ClangTidy(object):
         BAR = '-'*32
         with Pool(cpu_count()) as pool:
             results = pool.map(call, all_files)
-            for i, (process_status, tidy_status, msg) in enumerate(results):
+            for process_status, tidy_status, msg in results:
                 # Don't enforce clang-tidy to pass for now due to namespace
                 # for cub in thrust is not correct.
                 if tidy_status == 1:
@@ -253,11 +248,11 @@ right keywords?
     with open(tidy_file) as fd:
         tidy_config = fd.read()
         tidy_config = str(tidy_config)
-    tidy_config = '-config='+tidy_config
+    tidy_config = f'-config={tidy_config}'
     if not args.tidy_version:
         tidy = 'clang-tidy'
     else:
-        tidy = 'clang-tidy-' + str(args.tidy_version)
+        tidy = f'clang-tidy-{str(args.tidy_version)}'
     args = [tidy, tidy_config, test_file_path]
     (proc_code, tidy_status, error_msg) = call(args)
     assert proc_code == 0

@@ -74,11 +74,9 @@ class Tree:
         stacks = [0]
         nodes = []
         while stacks:
-            node = {}
             nid = stacks.pop()
 
-            node['node id'] = nid
-            node['gain'] = self.loss_change(nid)
+            node = {'node id': nid, 'gain': self.loss_change(nid)}
             node['cover'] = self.sum_hessian(nid)
             nodes.append(node)
 
@@ -88,8 +86,7 @@ class Tree:
                 stacks.append(left)
                 stacks.append(right)
 
-        string = '\n'.join(map(lambda x: '  ' + str(x), nodes))
-        return string
+        return '\n'.join(map(lambda x: f'  {str(x)}', nodes))
 
 
 class Model:

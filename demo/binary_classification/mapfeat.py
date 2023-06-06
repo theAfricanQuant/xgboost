@@ -19,7 +19,7 @@ def loadfmap( fname ):
                 continue
             k , v = it.split('=')
             fmap[ idx ][ v ] = len(nmap)
-            nmap[ len(nmap) ] = ftype+'='+k
+            nmap[ len(nmap) ] = f'{ftype}={k}'
     return fmap, nmap
 
 def write_nmap( fo, nmap ):
@@ -28,20 +28,16 @@ def write_nmap( fo, nmap ):
 
 # start here
 fmap, nmap = loadfmap( 'agaricus-lepiota.fmap' )
-fo = open( 'featmap.txt', 'w' )
-write_nmap( fo, nmap )
-fo.close()
-
-fo = open( 'agaricus.txt', 'w' )
-for l in open( 'agaricus-lepiota.data' ):
-    arr = l.split(',')
-    if arr[0] == 'p':
-        fo.write('1')
-    else:
-        assert arr[0] == 'e'
-        fo.write('0')
-    for i in range( 1,len(arr) ):
-        fo.write( ' %d:1' % fmap[i][arr[i].strip()] )
-    fo.write('\n')
-
-fo.close()
+with open( 'featmap.txt', 'w' ) as fo:
+    write_nmap( fo, nmap )
+with open( 'agaricus.txt', 'w' ) as fo:
+    for l in open( 'agaricus-lepiota.data' ):
+        arr = l.split(',')
+        if arr[0] == 'p':
+            fo.write('1')
+        else:
+            assert arr[0] == 'e'
+            fo.write('0')
+        for i in range( 1,len(arr) ):
+            fo.write( ' %d:1' % fmap[i][arr[i].strip()] )
+        fo.write('\n')

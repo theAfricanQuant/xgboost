@@ -60,8 +60,7 @@ labels = []
 row = []
 col = []
 dat = []
-i = 0
-for l in open(os.path.join(DEMO_DIR, 'data', 'agaricus.txt.train')):
+for i, l in enumerate(open(os.path.join(DEMO_DIR, 'data', 'agaricus.txt.train'))):
     arr = l.split()
     labels.append(int(arr[0]))
     for it in arr[1:]:
@@ -69,7 +68,6 @@ for l in open(os.path.join(DEMO_DIR, 'data', 'agaricus.txt.train')):
         row.append(i)
         col.append(int(k))
         dat.append(float(v))
-    i += 1
 csr = scipy.sparse.csr_matrix((dat, (row, col)))
 dtrain = xgb.DMatrix(csr, label=labels)
 watchlist = [(dtest, 'eval'), (dtrain, 'train')]

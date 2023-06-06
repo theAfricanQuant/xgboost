@@ -7,8 +7,8 @@ import numpy as np
 class TestOMP(unittest.TestCase):
     def test_omp(self):
         dpath = 'demo/data/'
-        dtrain = xgb.DMatrix(dpath + 'agaricus.txt.train')
-        dtest = xgb.DMatrix(dpath + 'agaricus.txt.test')
+        dtrain = xgb.DMatrix(f'{dpath}agaricus.txt.train')
+        dtest = xgb.DMatrix(f'{dpath}agaricus.txt.test')
 
         param = {'booster': 'gbtree',
                  'objective': 'binary:logistic',

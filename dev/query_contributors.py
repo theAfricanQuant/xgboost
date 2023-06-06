@@ -1,5 +1,6 @@
 """Query list of all contributors and reviewers in a release"""
 
+
 from sh.contrib import git
 import sys
 import re
@@ -19,9 +20,8 @@ contributors = set()
 reviewers = set()
 
 for line in git.log(f'{from_commit}..{to_commit}', '--pretty=format:%s', '--reverse'):
-    m = re.search('\(#([0-9]+)\)$', line.rstrip())
-    if m:
-        pr_id = m.group(1)
+    if m := re.search('\(#([0-9]+)\)$', line.rstrip()):
+        pr_id = m[1]
         print(f'PR #{pr_id}')
 
         r = requests.get(f'https://api.github.com/repos/dmlc/xgboost/pulls/{pr_id}/commits', auth=(username, password))

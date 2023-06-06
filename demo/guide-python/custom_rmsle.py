@@ -41,7 +41,7 @@ def generate_data() -> Tuple[xgb.DMatrix, xgb.DMatrix]:
     y += np.abs(np.min(y))
 
     # Create outliers
-    for i in range(0, kNumberOfOutliers):
+    for _ in range(0, kNumberOfOutliers):
         ind = np.random.randint(0, len(y)-1)
         y[ind] += np.random.randint(0, kOutlier)
 

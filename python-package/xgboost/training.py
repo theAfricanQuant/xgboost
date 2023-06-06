@@ -21,7 +21,7 @@ def _train_internal(params, dtrain,
     if isinstance(params, dict) \
             and 'eval_metric' in params \
             and isinstance(params['eval_metric'], list):
-        params = dict((k, v) for k, v in params.items())
+        params = dict(params.items())
         eval_metrics = params['eval_metric']
         params.pop("eval_metric", None)
         params = list(params.items())
@@ -194,9 +194,8 @@ def train(params, dtrain, num_boost_round=10, evals=(), obj=None, feval=None,
     # Most of legacy advanced options becomes callbacks
     if isinstance(verbose_eval, bool) and verbose_eval:
         callbacks.append(callback.print_evaluation())
-    else:
-        if isinstance(verbose_eval, int):
-            callbacks.append(callback.print_evaluation(verbose_eval))
+    elif isinstance(verbose_eval, int):
+        callbacks.append(callback.print_evaluation(verbose_eval))
 
     if early_stopping_rounds is not None:
         callbacks.append(callback.early_stop(early_stopping_rounds,
@@ -451,7 +450,7 @@ def cv(params, dtrain, num_boost_round=10, nfold=3, stratified=False, folds=None
         if 'eval_metric' in params:
             params['eval_metric'] = _metrics
     else:
-        params = dict((k, v) for k, v in params.items())
+        params = dict(params.items())
 
     if (not metrics) and 'eval_metric' in params:
         if isinstance(params['eval_metric'], list):
@@ -474,9 +473,8 @@ def cv(params, dtrain, num_boost_round=10, nfold=3, stratified=False, folds=None
 
     if isinstance(verbose_eval, bool) and verbose_eval:
         callbacks.append(callback.print_evaluation(show_stdv=show_stdv))
-    else:
-        if isinstance(verbose_eval, int):
-            callbacks.append(callback.print_evaluation(verbose_eval, show_stdv=show_stdv))
+    elif isinstance(verbose_eval, int):
+        callbacks.append(callback.print_evaluation(verbose_eval, show_stdv=show_stdv))
 
     callbacks_before_iter = [
         cb for cb in callbacks if
@@ -499,12 +497,12 @@ def cv(params, dtrain, num_boost_round=10, nfold=3, stratified=False, folds=None
         res = aggcv([f.eval(i, feval) for f in cvfolds])
 
         for key, mean, std in res:
-            if key + '-mean' not in results:
-                results[key + '-mean'] = []
-            if key + '-std' not in results:
-                results[key + '-std'] = []
-            results[key + '-mean'].append(mean)
-            results[key + '-std'].append(std)
+            if f'{key}-mean' not in results:
+                results[f'{key}-mean'] = []
+            if f'{key}-std' not in results:
+                results[f'{key}-std'] = []
+            results[f'{key}-mean'].append(mean)
+            results[f'{key}-std'].append(std)
         try:
             for cb in callbacks_after_iter:
                 cb(CallbackEnv(model=None,

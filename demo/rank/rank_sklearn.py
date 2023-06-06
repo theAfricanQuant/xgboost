@@ -10,21 +10,15 @@ x_test, y_test = load_svmlight_file("mq2008.test")
 group_train = []
 with open("mq2008.train.group", "r") as f:
     data = f.readlines()
-    for line in data:
-        group_train.append(int(line.split("\n")[0]))
-
+    group_train.extend(int(line.split("\n")[0]) for line in data)
 group_valid = []
 with open("mq2008.vali.group", "r") as f:
     data = f.readlines()
-    for line in data:
-        group_valid.append(int(line.split("\n")[0]))
-
+    group_valid.extend(int(line.split("\n")[0]) for line in data)
 group_test = []
 with open("mq2008.test.group", "r") as f:
     data = f.readlines()
-    for line in data:
-        group_test.append(int(line.split("\n")[0]))
-
+    group_test.extend(int(line.split("\n")[0]) for line in data)
 params = {'objective': 'rank:ndcg', 'learning_rate': 0.1,
           'gamma': 1.0, 'min_child_weight': 0.1,
           'max_depth': 6, 'n_estimators': 4}

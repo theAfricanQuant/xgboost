@@ -370,7 +370,7 @@ def test_sklearn_api():
 
     preds = classifier.predict(te_d)
     labels = te_l
-    err = sum([1 for p, l in zip(preds, labels) if p != l]) * 1.0 / len(te_l)
+    err = sum(1 for p, l in zip(preds, labels) if p != l) * 1.0 / len(te_l)
     assert err < 0.2
 
 
@@ -387,7 +387,7 @@ def test_sklearn_api_gblinear():
 
     preds = classifier.predict(te_d)
     labels = te_l
-    err = sum([1 for p, l in zip(preds, labels) if p != l]) * 1.0 / len(te_l)
+    err = sum(1 for p, l in zip(preds, labels) if p != l) * 1.0 / len(te_l)
     assert err < 0.5
 
 
@@ -449,7 +449,7 @@ def test_sklearn_nfolds_cv():
                  folds=skf, seed=seed, as_pandas=True)
     cv3 = xgb.cv(params, dm, num_boost_round=10, nfold=nfolds,
                  stratified=True, seed=seed, as_pandas=True)
-    assert cv1.shape[0] == cv2.shape[0] and cv2.shape[0] == cv3.shape[0]
+    assert cv1.shape[0] == cv2.shape[0] == cv3.shape[0]
     assert cv2.iloc[-1, 0] == cv3.iloc[-1, 0]
 
 

@@ -46,8 +46,8 @@ class TestSHAP(unittest.TestCase):
         fscores = bst.get_fscore()
         assert scores1 == fscores
 
-        dtrain = xgb.DMatrix(dpath + 'agaricus.txt.train')
-        dtest = xgb.DMatrix(dpath + 'agaricus.txt.test')
+        dtrain = xgb.DMatrix(f'{dpath}agaricus.txt.train')
+        dtest = xgb.DMatrix(f'{dpath}agaricus.txt.test')
 
         def fn(max_depth, num_rounds):
             # train
@@ -92,48 +92,44 @@ class TestSHAP(unittest.TestCase):
                 for line in lines:
                     match = re.search(r_exp, line)
                     if match is not None:
-                        ind = int(match.group(1))
+                        ind = int(match[1])
                         while ind >= len(trees[-1]):
                             trees[-1].append(None)
                         trees[-1][ind] = {
-                            "yes_ind": int(match.group(4)),
-                            "no_ind": int(match.group(5)),
+                            "yes_ind": int(match[4]),
+                            "no_ind": int(match[5]),
                             "value": None,
-                            "threshold": float(match.group(3)),
-                            "feature_index": int(match.group(2)),
-                            "cover": float(match.group(6))
+                            "threshold": float(match[3]),
+                            "feature_index": int(match[2]),
+                            "cover": float(match[6]),
                         }
                     else:
 
                         match = re.search(r_exp_leaf, line)
-                        ind = int(match.group(1))
+                        ind = int(match[1])
                         while ind >= len(trees[-1]):
                             trees[-1].append(None)
-                        trees[-1][ind] = {
-                            "value": float(match.group(2)),
-                            "cover": float(match.group(3))
-                        }
+                        trees[-1][ind] = {"value": float(match[2]), "cover": float(match[3])}
             return trees
 
         def exp_value_rec(tree, z, x, i=0):
             if tree[i]["value"] is not None:
                 return tree[i]["value"]
-            else:
-                ind = tree[i]["feature_index"]
-                if z[ind] == 1:
-                    if x[ind] < tree[i]["threshold"]:
-                        return exp_value_rec(tree, z, x, tree[i]["yes_ind"])
-                    else:
-                        return exp_value_rec(tree, z, x, tree[i]["no_ind"])
-                else:
-                    r_yes = tree[tree[i]["yes_ind"]]["cover"] / tree[i]["cover"]
-                    out = exp_value_rec(tree, z, x, tree[i]["yes_ind"])
-                    val = out * r_yes
+            ind = tree[i]["feature_index"]
+            if z[ind] == 1:
+                return (
+                    exp_value_rec(tree, z, x, tree[i]["yes_ind"])
+                    if x[ind] < tree[i]["threshold"]
+                    else exp_value_rec(tree, z, x, tree[i]["no_ind"])
+                )
+            r_yes = tree[tree[i]["yes_ind"]]["cover"] / tree[i]["cover"]
+            out = exp_value_rec(tree, z, x, tree[i]["yes_ind"])
+            val = out * r_yes
 
-                    r_no = tree[tree[i]["no_ind"]]["cover"] / tree[i]["cover"]
-                    out = exp_value_rec(tree, z, x, tree[i]["no_ind"])
-                    val += out * r_no
-                    return val
+            r_no = tree[tree[i]["no_ind"]]["cover"] / tree[i]["cover"]
+            out = exp_value_rec(tree, z, x, tree[i]["no_ind"])
+            val += out * r_no
+            return val
 
         def exp_value(trees, z, x):
             return np.sum([exp_value_rec(tree, z, x) for tree in trees])
@@ -144,9 +140,9 @@ class TestSHAP(unittest.TestCase):
         def shap_value(trees, x, i, cond=None, cond_value=None):
             M = len(x)
             z = np.zeros(M)
-            other_inds = list(set(range(M)) - set([i]))
+            other_inds = list(set(range(M)) - {i})
             if cond is not None:
-                other_inds = list(set(other_inds) - set([cond]))
+                other_inds = list(set(other_inds) - {cond})
                 z[cond] = cond_value
                 M -= 1
             total = 0.0
@@ -182,7 +178,7 @@ class TestSHAP(unittest.TestCase):
         def interaction_value(trees, x, i, j):
             M = len(x)
             z = np.zeros(M)
-            other_inds = list(set(range(M)) - set([i, j]))
+            other_inds = list(set(range(M)) - {i, j})
 
             total = 0.0
             for subset in all_subsets(other_inds):

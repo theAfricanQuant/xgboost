@@ -22,22 +22,20 @@ test_Y = test[:, 34]
 xg_train = xgb.DMatrix(train_X, label=train_Y)
 xg_test = xgb.DMatrix(test_X, label=test_Y)
 # setup parameters for xgboost
-param = {}
-# use softmax multi-class classification
-param['objective'] = 'multi:softmax'
-# scale weight of positive examples
-param['eta'] = 0.1
-param['max_depth'] = 6
-param['nthread'] = 4
-param['num_class'] = 6
-
+param = {
+    'objective': 'multi:softmax',
+    'eta': 0.1,
+    'max_depth': 6,
+    'nthread': 4,
+    'num_class': 6,
+}
 watchlist = [(xg_train, 'train'), (xg_test, 'test')]
 num_round = 5
 bst = xgb.train(param, xg_train, num_round, watchlist)
 # get prediction
 pred = bst.predict(xg_test)
 error_rate = np.sum(pred != test_Y) / test_Y.shape[0]
-print('Test error using softmax = {}'.format(error_rate))
+print(f'Test error using softmax = {error_rate}')
 
 # do the same thing again, but output probabilities
 param['objective'] = 'multi:softprob'
@@ -47,4 +45,4 @@ bst = xgb.train(param, xg_train, num_round, watchlist)
 pred_prob = bst.predict(xg_test).reshape(test_Y.shape[0], 6)
 pred_label = np.argmax(pred_prob, axis=1)
 error_rate = np.sum(pred_label != test_Y) / test_Y.shape[0]
-print('Test error using softprob = {}'.format(error_rate))
+print(f'Test error using softprob = {error_rate}')

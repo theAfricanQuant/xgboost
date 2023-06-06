@@ -72,9 +72,9 @@ else:
                             "not " + path_type.__name__)
         if isinstance(path_repr, (str, bytes)):
             return path_repr
-        raise TypeError("expected {}.__fspath__() to return str or bytes, "
-                        "not {}".format(path_type.__name__,
-                                        type(path_repr).__name__))
+        raise TypeError(
+            f"expected {path_type.__name__}.__fspath__() to return str or bytes, not {type(path_repr).__name__}"
+        )
 ###############################################################################
 # END NUMPY PATHLIB ATTRIBUTION
 ###############################################################################
@@ -141,18 +141,15 @@ try:
         '''Label encoder with JSON serialization methods.'''
         def to_json(self):
             '''Returns a JSON compatible dictionary'''
-            meta = dict()
-            for k, v in self.__dict__.items():
-                if isinstance(v, np.ndarray):
-                    meta[k] = v.tolist()
-                else:
-                    meta[k] = v
-            return meta
+            return {
+                k: v.tolist() if isinstance(v, np.ndarray) else v
+                for k, v in self.__dict__.items()
+            }
 
         def from_json(self, doc):
             # pylint: disable=attribute-defined-outside-init
             '''Load the encoder back from a JSON compatible dict.'''
-            meta = dict()
+            meta = {}
             for k, v in doc.items():
                 if k == 'classes_':
                     self.classes_ = np.array(v)
